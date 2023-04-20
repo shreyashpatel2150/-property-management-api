@@ -22,3 +22,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::post('property/create', [ PropertyController::class, 'create' ]);
+
+Route::get('property/list', [ PropertyController::class, 'list' ]);

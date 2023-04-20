@@ -56,4 +56,25 @@ class PropertyRepository implements PropertyRepositoryInterface
             return [ 'status' => false, 'message' => 'Something went wrong happen!' ];
         }
     }
+
+    /**
+     * 
+     * list all properties
+     * @param String $search
+     * 
+     * @return \Illuminate\contracts\Pagination\LengthAwarePaginator
+     */
+    public function list($search = '') : ?\Illuminate\contracts\Pagination\LengthAwarePaginator
+    {
+        $properties = $this->property->with('amenities');
+        if ( '' != $search ) {
+            $properties = $properties->where('name', 'like', "%{$search}%")
+                                    ->orWhere('address', 'like', "%{$search}%")
+                                    ->orWhere('floor_area_width', 'like', "%{$search}%")
+                                    ->orWhere('floor_area_length', 'like', "%{$search}%")
+                                    ->orWhere('land_area_width', 'like', "%{$search}%")
+                                    ->orWhere('land_area_length', 'like', "%{$search}%");
+        }
+        return $properties->paginate(5);
+    }
 }

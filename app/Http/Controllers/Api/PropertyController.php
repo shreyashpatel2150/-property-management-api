@@ -31,4 +31,16 @@ class PropertyController extends Controller
 
         return response()->json([ 'message' => $response['message'] ], 500);
     }
+
+    /**
+     * 
+     * list all properties
+     * @param Illuminate\Http\Request $request
+     * @return Json
+     */
+    public function list(Request $request)
+    {
+        $response = $this->propertyRepository->list($request->search);
+        return response()->json([ 'data' => $response ], 200);
+    }
 }
