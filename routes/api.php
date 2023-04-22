@@ -21,6 +21,12 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::post('property/create', [ PropertyController::class, 'create' ]);
-
-Route::get('property/list', [ PropertyController::class, 'list' ]);
+Route::controller(PropertyController::class)
+    ->prefix('property')
+    ->group( function () {
+        Route::post('/create', 'create');
+        Route::get('/list', 'list');
+        Route::delete('/{id}', 'destroy');
+        Route::get('/{id}', 'edit');
+        Route::put('/{id}/update', 'update');
+    });

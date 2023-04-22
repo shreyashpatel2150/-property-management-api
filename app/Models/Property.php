@@ -11,6 +11,16 @@ class Property extends Model
 
     protected $appends = [ 'display_floor_plan_area', 'display_land_area' ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        // while deleting property delete all the dependent data
+        static::deleting(function($property) {
+            $property->amenities->each->delete();
+        });
+    }
+
     /**
      * Get all of the amenities for the Property
      *

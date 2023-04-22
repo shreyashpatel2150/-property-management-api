@@ -22,7 +22,7 @@ class PropertyRepository implements PropertyRepositoryInterface
     /**
      * create new property
      * 
-     * @param Array $request
+     * @param Array $data
      * @return Array
      */
     public function create(array $data) : array
@@ -42,10 +42,12 @@ class PropertyRepository implements PropertyRepositoryInterface
 
                 if ( true == isset( $data['amenities'] ) && true == is_array( $data['amenities'] ) ) {
                     foreach ( $data['amenities'] as $amenity ) {
-                        $propertyAmenity = new $this->propertyAmenity;
-                        $propertyAmenity->property_id = $property->id;
-                        $propertyAmenity->name = $amenity;
-                        $propertyAmenity->save();
+                        if ( '' != $amenity ) {
+                            $propertyAmenity = new $this->propertyAmenity;
+                            $propertyAmenity->property_id = $property->id;
+                            $propertyAmenity->name = $amenity;
+                            $propertyAmenity->save();
+                        }
                     }
                 }
             });
@@ -76,5 +78,86 @@ class PropertyRepository implements PropertyRepositoryInterface
                                     ->orWhere('land_area_length', 'like', "%{$search}%");
         }
         return $properties->paginate(5);
+    }
+
+    /**
+     * 
+     * Delete property
+     * @param integer $id
+     * 
+     * @return Array
+     */
+    public function destroy(int $id) : array
+    {
+        try {
+            if($this->property->destroy($id)) {
+                return [ 'status' => true, 'data' => [], 'message' => 'Property deleted successfully.' ];
+            }
+
+            return [ 'status' => false, 'message' => 'Something went wrong happen!' ];
+        } catch(Exception $e) {
+            dd($e);
+            return [ 'status' => false, 'message' => 'Something went wrong happen!' ];
+        }
+    }
+
+    /**
+     * Get the property details by property id
+     * @param integer $id
+     * @return \App\Models\Property
+     */
+    public function find(int $id) : \App\Models\Property
+    {
+        return $this->property->with('amenities')->find($id);
+    }
+
+    /**
+     * Update property detail
+     * 
+     * @param Array $data
+     * @param integer $id
+     * @return Array
+     */
+    public function update(array $data, int $id) : array
+    {
+        try {
+            DB::transaction(function () use ($data, $id) {
+                $property = $this->property->find($id);
+                $property->name = $data['name'];
+                $property->description = $data['description'];
+                $property->address = $data['address'];
+                $property->floor_area_width = $data['floor_area_width'];
+                $property->floor_area_length = $data['floor_area_length'];
+                $property->land_area_width = $data['land_area_width'];
+                $property->land_area_length = $data['land_area_length'];
+                $property->save();
+
+                $allPropertyIds = [];
+                if ( true == isset( $data['amenities'] ) && true == is_array( $data['amenities'] ) ) {
+                    foreach ( $data['amenities'] as $key => $amenity ) {
+                        if ( '' != $amenity ) {
+                            if ( isset($data['amenityIds'][$key]) && $data['amenityIds'][$key] > 0 ) {
+                                $propertyAmenity = $this->propertyAmenity->find($data['amenityIds'][$key]);
+                            } else {
+                                $propertyAmenity = new $this->propertyAmenity;
+                                $propertyAmenity->property_id = $property->id;
+                            }
+                            $propertyAmenity->name = $amenity;
+                            $propertyAmenity->save();
+                            $allPropertyIds[] = $propertyAmenity->id;
+                        }
+                    }
+                }
+
+                $amenities = $this->propertyAmenity->where('property_id', $id);
+                if ( count( $allPropertyIds ) > 0 ) {
+                    $amenities->whereNotIn('id', $allPropertyIds);
+                }
+                $amenities->delete();
+            });
+            return [ 'status' => true, 'message' => 'Property updated succesfully.' ];
+        } catch(Exception $e) {
+            return [ 'status' => false, 'message' => 'Something went wrong happen!' ];
+        }
     }
 }
